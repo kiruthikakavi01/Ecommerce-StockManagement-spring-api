@@ -13,87 +13,98 @@ import org.springframework.web.bind.annotation.RestController;
 import com.stockmanagement.dto.MessageDTO;
 import com.stockmanagement.model.Stock;
 import com.stockmanagement.service.StockService;
-
+import com.stockmanagement.validator.StockValidator;
 
 @RestController
 public class StockController {
 	@Autowired
 	StockService stockService;
+	@Autowired
+	StockValidator stockValidator;
+
 	@PostMapping("stock/save")
 	public ResponseEntity<?> addStock(@RequestBody Stock stock) {
 		try {
-		stockService.save(stock);
-		MessageDTO message=new MessageDTO("success");
-		return new ResponseEntity<>(message,HttpStatus.OK);
+			stockService.save(stock);
+			MessageDTO message = new MessageDTO("success");
+			return new ResponseEntity<>(message, HttpStatus.OK);
+		} catch (Exception e) {
+			MessageDTO message = new MessageDTO(e.getMessage());
+			return new ResponseEntity<>(message, HttpStatus.BAD_REQUEST);
 		}
-		catch(Exception e) {
-			MessageDTO message=new MessageDTO(e.getMessage());
-			return new ResponseEntity<>(message,HttpStatus.BAD_REQUEST);
-		}
-		
+
 	}
-	@GetMapping("stock/list")  
+
+	@GetMapping("stock/list")
 	public List<Stock> listStock() {
-		List<Stock> findAll=null;
+		List<Stock> findAll = null;
 		try {
-			 findAll=stockService.findAll();
-		} catch (Exception e) {	
-		e.printStackTrace();
+			findAll = stockService.findAll();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		return findAll;
 	}
+
 	@GetMapping("stock/{id}") // find by Dish Id
 	public Stock findById(@PathVariable("id") Integer id) {
 		System.out.println("findById " + id);
-		Stock stock= stockService.findById(id);
+		Stock stock = stockService.findById(id);
 		return stock;
 	}
+
 	@GetMapping("stock/product/{id}")
 	public Stock findByProductId(@PathVariable("id") Integer id) {
-		System.out.println("findByProductId"+id);
-		Stock stock=stockService.findByProductId(id);
+		System.out.println("findByProductId" + id);
+		Stock stock = stockService.findByProductId(id);
 		return stock;
-		
+
 	}
+
 	@PostMapping("stock/reduce")
-	public ResponseEntity<?> reduceStock(@RequestBody Stock stock){
+	public ResponseEntity<?> reduceStock(@RequestBody Stock stock) {
+		MessageDTO message = null;
 		try {
-			
-		stockService.reduceByProductId(stock);
-		MessageDTO message=new MessageDTO("success");
-		return new ResponseEntity<>(message,HttpStatus.OK);
-		}catch(Exception e) {
-			MessageDTO message=new MessageDTO(e.getMessage());
-			return new ResponseEntity<>(message,HttpStatus.BAD_REQUEST);
-			
+			boolean b = stockValidator.stockValidation(stock);
+			if (b == true) {
+				stockService.reduceByProductId(stock);
+				message = new MessageDTO("success");
+				return new ResponseEntity<>(message, HttpStatus.OK);
+			} else if (b == false) {
+				message = new MessageDTO("Out of Stock");
+				return new ResponseEntity<>(message, HttpStatus.OK);
+			}
+		} catch (Exception e) {
+			message = new MessageDTO(e.getMessage());
+			return new ResponseEntity<>(message, HttpStatus.BAD_REQUEST);
+
 		}
+		return new ResponseEntity<>(message, HttpStatus.OK);
 	}
+
 	@PostMapping("stock/reduce/bulk")
-	public ResponseEntity<?> reduceStockb(@RequestBody List<Stock> stocks){
+	public ResponseEntity<?> reduceStockb(@RequestBody List<Stock> stocks) {
+
+		MessageDTO message = null;
 		try {
-		for(Stock stock : stocks) {	
-		stockService.reduceByProductId(stock);
+			for (Stock stock : stocks) {
+				boolean b = stockValidator.stockValidation(stock);
+				if (b == true) {
+					stockService.reduceByProductId(stock);
+					message = new MessageDTO("success");
+					// return new ResponseEntity<>(message, HttpStatus.OK);
+				} else if (b == false) {
+					message = new MessageDTO("Out of Stock");
+					// return new ResponseEntity<>(message, HttpStatus.OK);
+				}
+			}
+
+		} catch (Exception e) {
+			message = new MessageDTO(e.getMessage());
+			return new ResponseEntity<>(message, HttpStatus.BAD_REQUEST);
+
 		}
-		MessageDTO message=new MessageDTO("success");
-		return new ResponseEntity<>(message,HttpStatus.OK);
-		}catch(Exception e) {
-			MessageDTO message=new MessageDTO(e.getMessage());
-			return new ResponseEntity<>(message,HttpStatus.BAD_REQUEST);
-			
-		}
+		return new ResponseEntity<>(message, HttpStatus.OK);
 	}
-	/*@PostMapping("stock/reduce/validate")
-	public ResponseEntity<?> reduceStockv(@RequestBody List<Stock> stocks){
-		try {
-		for(Stock stock : stocks) {	
-		stockService.reduceByProductId(stock);
-		}
-		MessageDTO message=new MessageDTO("success");
-		return new ResponseEntity<>(message,HttpStatus.OK);
-		}catch(Exception e) {
-			MessageDTO message=new MessageDTO(e.getMessage());
-			return new ResponseEntity<>(message,HttpStatus.BAD_REQUEST);
-			
-		}
-	}*/
+
 }

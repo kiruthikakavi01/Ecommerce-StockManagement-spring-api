@@ -54,4 +54,5 @@ public Stock findByProductId(Integer id) {
 public void reduceByProductId(Stock stock) {
 	stockRepository.reduceStockByProductId(stock.getQuantity(),stock.getProductId());
 }
+
 }
